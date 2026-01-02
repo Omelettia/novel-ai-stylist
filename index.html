@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narrative Engine v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style id="ai-styles"></style>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; }
+        #particle-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 0; }
+        #editor-container { position: relative; z-index: 10; }
+        .ambient-wrapper { position: relative; display: inline; }
+        /* Placeholder for AI-generated floating animations */
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-slate-200">
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="sticky top-0 bg-black/80 backdrop-blur-md p-4 flex gap-4 border-b border-gray-800 z-50">
+        <div class="text-xl font-bold text-red-700 tracking-tighter mr-4">STORY ENGINE</div>
+        <button onclick="toggleAutoVibe()" id="vibe-toggle" class="bg-blue-600 px-3 py-1 rounded text-xs font-bold">🤖 AUTO-VIBE: OFF</button>
+        <button onclick="clearParticles()" class="text-xs text-gray-400">Clear Effects</button>
+    </div>
+
+    <main id="editor-container" class="p-10 max-w-4xl mx-auto">
+        <div id="editor" contenteditable="true" class="bg-transparent border-none p-8 focus:outline-none leading-relaxed text-xl font-serif">
+            The room was cold. Then, I stoked the fire...
+        </div>
+    </main>
+
+    <div id="context-menu" class="hidden absolute bg-zinc-900 text-white rounded shadow-2xl py-2 z-50 w-52 border border-zinc-700">
+        <button onclick="applyAiMagic()" class="w-full text-left px-4 py-2 hover:bg-zinc-800 flex items-center gap-2">✨ Apply AI Vibe</button>
+    </div>
+
+    <script>
+        let savedRange = null;
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+
+        // 1. Resize Canvas
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 2. Right Click Logic
+        document.addEventListener('contextmenu', (e) => {
+            const selection = window.getSelection();
+            if (selection.toString().length > 0) {
+                e.preventDefault();
+                savedRange = selection.getRangeAt(0).cloneRange();
+                const menu = document.getElementById('context-menu');
+                menu.classList.remove('hidden');
+                menu.style.left = `${e.pageX}px`;
+                menu.style.top = `${e.pageY}px`;
+            }
+        });
+        document.addEventListener('click', () => document.getElementById('context-menu').classList.add('hidden'));
+
+        // 3. The Core Magic Function
+        async function applyAiMagic() {
+            const vibe = prompt("What's the vibe? (e.g. 'dying embers', 'digital ghost', 'icy wind')");
+            if (!vibe) return;
+
+            const response = await fetch('http://127.0.0.1:8000/generate-style', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selected_text: savedRange.toString(), user_prompt: vibe })
+            });
+
+            const data = await response.json();
+            
+            // Add CSS
+            document.getElementById('ai-styles').innerHTML += data.css;
+
+            // Create the wrapper for the text + ambient HTML
+            const wrapper = document.createElement('span');
+            wrapper.className = "ambient-wrapper";
+            
+            const textSpan = document.createElement('span');
+            textSpan.className = data.className;
+            textSpan.appendChild(savedRange.extractContents());
+            
+            wrapper.appendChild(textSpan);
+            
+            // Add the "Beside Text" effect (e.g., a floating flame)
+            if (data.ambient_html && data.ambient_html !== "none") {
+                const ambient = document.createElement('div');
+                ambient.style.position = "absolute";
+                ambient.style.top = "-20px";
+                ambient.style.right = "-15px";
+                ambient.innerHTML = data.ambient_html;
+                wrapper.appendChild(ambient);
+            }
+
+            savedRange.insertNode(wrapper);
+
+            // Trigger Global Particles
+            if (data.particles !== 'none') {
+                initParticles(data.particles);
+            }
+        }
+
+        // 4. Particle System
+        class Particle {
+            constructor(type) {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + 10;
+                this.size = Math.random() * 3 + 1;
+                this.speedY = Math.random() * 1 + 0.5;
+                this.color = type === 'fire' ? `rgba(255, ${Math.random()*100}, 0, 0.5)` : 'rgba(255,255,255,0.3)';
+                this.type = type;
+            }
+            update() {
+                this.y -= this.speedY;
+                if (this.type === 'glitch') this.x += (Math.random() - 0.5) * 10;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles(type) {
+            particlesArray = [];
+            for (let i = 0; i < 50; i++) {
+                particlesArray.push(new Particle(type));
+            }
+            animate();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particlesArray.forEach((p, i) => {
+                p.update();
+                p.draw();
+                if (p.y < 0) particlesArray[i] = new Particle(p.type);
+            });
+            requestAnimationFrame(animate);
+        }
+
+        function clearParticles() { particlesArray = []; ctx.clearRect(0,0,canvas.width,canvas.height); }
+    </script>
+</body>
+</html>
