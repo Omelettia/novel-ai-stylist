@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cupcake">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimoire OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet" />
+    <style>
+        :root { --paper: #fdfaf3; --ink: #2d2424; }
+        body { background-color: #f4f1ea; color: var(--ink); transition: background 0.5s ease; }
+        
+        /* Reading Mode Overrides */
+        body.reading-mode .pane-sidebar, 
+        body.reading-mode .pane-nav,
+        body.reading-mode nav:not(.read-nav) { display: none !important; }
+        
+        body.reading-mode .editor-paper { box-shadow: none; border: none; max-width: 850px; margin-top: 2vh; }
+        body.reading-mode .editor-container { background: var(--paper); }
+
+        /* Reading Navigation Arrows */
+        .read-nav { display: none; position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; gap: 1rem; }
+        body.reading-mode .read-nav { display: flex; }
+
+        .pane-sidebar { background: #1a1a1a; color: #d1d1d1; border-right: 1px solid #333; }
+        .pane-nav { background: #eeebe3; border-right: 1px solid rgba(0,0,0,0.05); }
+        .editor-paper { background: var(--paper); box-shadow: 0 10px 40px rgba(0,0,0,0.05); font-family: 'Georgia', serif; }
+        
+        #context-menu { display: none; position: fixed; z-index: 1000; background: white; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; width: 220px; }
+        #editor[contenteditable="false"] { opacity: 0.9; cursor: default; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <ul id="context-menu" class="menu menu-sm shadow-lg border">
+        <li class="menu-title opacity-50">Casting Menu</li>
+        <li><a onclick="castSpell('ai')">🪄 Ask Gemini...</a></li>
+        <div class="divider my-0"></div>
+        <li><a onclick="dispelMagic()" class="text-error font-bold">🌑 Dispel Magic</a></li>
+        <div class="divider my-0"></div>
+    </ul>
+
+    <div class="read-nav join shadow-2xl">
+        <button class="btn join-item btn-ghost bg-white/80" onclick="navigateChapter(-1)">← Prev</button>
+        <button class="btn join-item btn-primary" onclick="toggleReadingMode()">Exit Reading-mode</button>
+        <button class="btn join-item btn-ghost bg-white/80" onclick="navigateChapter(1)">Next →</button>
+    </div>
+
+    <div id="auth-modal" class="modal modal-open">
+        <div class="modal-box bg-white">
+            <h3 class="font-bold text-2xl text-amber-800 uppercase text-center">Open Grimoire</h3>
+            <div class="py-6 space-y-4">
+                <input id="user-in" type="text" placeholder="Username" class="input input-bordered w-full" />
+                <input id="pass-in" type="password" placeholder="Password" class="input input-bordered w-full" />
+            </div>
+            <div class="modal-action">
+                <button onclick="handleAuth('signup')" class="btn btn-ghost">Register</button>
+                <button onclick="handleAuth('login')" class="btn btn-primary px-8">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-layout" class="flex flex-1 overflow-hidden hidden">
+        <aside class="w-64 pane-sidebar flex flex-col p-4">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-[10px] font-black tracking-widest uppercase opacity-40">Grimoire Books</span>
+                <button onclick="createNewBook()" class="text-amber-500 hover:scale-125 transition">+</button>
+            </div>
+            <ul id="book-list" class="menu menu-sm p-0 gap-1 overflow-y-auto"></ul>
+        </aside>
+
+        <section class="w-72 pane-nav flex flex-col">
+            <div class="p-4 border-b border-black/5 flex justify-between items-center bg-black/5">
+                <span class="text-[10px] font-black tracking-widest uppercase opacity-40">Chapters</span>
+                <button onclick="createNewChapter()" class="text-xs font-bold text-amber-700">+ New</button>
+            </div>
+            <div id="chapter-list" class="flex-1 overflow-y-auto"></div>
+        </section>
+
+        <main class="flex-1 flex flex-col editor-container">
+            <nav class="h-16 flex items-center justify-between ps-8 pe-16 border-b border-black/5 bg-white/50 backdrop-blur-md">
+                <input id="chapter-title" type="text" placeholder="Select a chapter..." disabled class="bg-transparent font-bold text-lg outline-none w-full" />
+                <div class="flex gap-2 items-center">
+                    <button onclick="toggleReadingMode()" id="zen-btn" class="btn btn-outline btn-sm">📖 Reading-mode</button>
+                    <button onclick="sync()" id="sync-btn" class="btn btn-success btn-sm">SYNC</button>
+                    <button onclick="logout()" class="btn btn-ghost btn-sm">EXIT</button>
+                </div>
+            </nav>
+            <div class="flex-1 overflow-y-auto p-12 relative" id="scroll-container">
+                <div class="editor-paper max-w-3xl mx-auto p-16 min-h-[90vh]">
+                    <div id="editor" contenteditable="false" class="prose lg:prose-xl outline-none">
+                        <p class="opacity-30 italic">Select a book and chapter to begin...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
