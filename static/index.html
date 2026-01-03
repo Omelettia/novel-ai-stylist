@@ -12,7 +12,7 @@
 
     <div id="sticky-title" class="sticky-reader-title">Untitled Chapter</div>
 
-    <ul id="context-menu" class="menu menu-sm shadow-lg border bg-white rounded-box"></ul>
+    <ul id="context-menu" class="menu menu-sm shadow-lg border bg-white rounded-box absolute z-50 hidden"></ul>
 
     <div class="read-nav join shadow-2xl">
         <button class="btn join-item btn-ghost bg-white/80" onclick="navigateChapter(-1)">← Previous</button>
@@ -122,18 +122,20 @@
             </div>
         </div>
     </div>
-    <div id="delete-modal" class="modal">
-    <div class="modal-box max-w-xs bg-[#fdfaf3] border-2 border-red-200 shadow-2xl p-6">
-        <h3 id="delete-modal-title" class="font-serif font-bold text-lg text-red-900 tracking-tighter uppercase">Banish Content?</h3>
-        <p id="delete-modal-desc" class="py-4 text-sm italic opacity-70 leading-relaxed text-amber-900">
-            This action will permanently erase these pages from your grimoire.
-        </p>
-        <div class="modal-action flex justify-between items-center">
-            <button onclick="closeDeleteModal()" class="btn btn-ghost btn-sm text-xs opacity-50 hover:opacity-100">NEVERMIND</button>
-            <button id="delete-modal-confirm" class="btn btn-sm bg-red-500 hover:bg-red-700 border-none text-white px-6 uppercase font-bold tracking-widest">Confirm</button>
+
+    <div id="delete-modal" class="modal z-[1000]">
+        <div class="modal-box max-w-xs bg-[#fdfaf3] border-2 border-red-200 shadow-2xl p-6">
+            <h3 id="delete-modal-title" class="font-serif font-bold text-lg text-red-900 tracking-tighter uppercase">Banish Content?</h3>
+            <p id="delete-modal-desc" class="py-4 text-sm italic opacity-70 leading-relaxed text-amber-900">
+                This action will permanently erase these pages from your grimoire.
+            </p>
+            <div class="modal-action flex justify-between items-center">
+                <button onclick="closeDeleteModal()" class="btn btn-ghost btn-sm text-xs opacity-50 hover:opacity-100">NEVERMIND</button>
+                <button id="delete-modal-confirm" class="btn btn-sm bg-red-500 hover:bg-red-700 border-none text-white px-6 uppercase font-bold tracking-widest">Confirm</button>
+            </div>
         </div>
     </div>
-</div>
-    <script src="/static/js/script.js"></script>
+    <div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-2 z-[9999] pointer-events-none"></div>
+    <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

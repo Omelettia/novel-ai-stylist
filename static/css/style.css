@@ -91,7 +91,7 @@ body.reading-mode .read-nav {
 
 /* Button & Layout Fixes */
 .btn-sm {
-    flex-shrink: 0; /* Prevents buttons from squishing */
+    flex-shrink: 0; 
 }
 
 #sync-btn {
@@ -100,7 +100,7 @@ body.reading-mode .read-nav {
     padding-top: 4px;
     padding-bottom: 4px;
     line-height: 1.2;
-    color: white; /* High contrast text */
+    color: white; 
 }
 
 /* Context Menu & Modals */
