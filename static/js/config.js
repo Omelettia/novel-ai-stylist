@@ -1,2 +1,5 @@
-export const API_URL = "http://127.0.0.1:8000";
+const isLocal = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+
+export const API = isLocal ? "http://127.0.0.1:8000" : ""; 
+
 export const MAX_HISTORY = 50;

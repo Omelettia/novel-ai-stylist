@@ -5,4 +5,5 @@ psycopg2-binary
 passlib[bcrypt]
 python-jose[cryptography]
 python-dotenv
+python-multipart
 google-genai
