@@ -1,0 +1,120 @@
+/* Core Variables & Base Styles */
+:root {
+    --paper: #fdfaf3;
+    --ink: #2d2424;
+}
+
+body {
+    background-color: #f4f1ea;
+    color: var(--ink);
+    transition: background 0.5s ease;
+}
+
+/* Reading Mode Logic */
+body.reading-mode .pane-sidebar, 
+body.reading-mode .pane-nav,
+body.reading-mode nav:not(.read-nav) {
+    display: none !important;
+}
+
+body.reading-mode .editor-paper {
+    box-shadow: none;
+    border: none;
+    max-width: 800px;
+    margin-top: 80px;
+}
+
+body.reading-mode .editor-container {
+    background: var(--paper);
+}
+
+/* UI Elements */
+.sticky-reader-title {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(253, 250, 243, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 90;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    align-items: center;
+    justify-content: center;
+    font-family: 'Georgia', serif;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+body.reading-mode .sticky-reader-title {
+    display: flex;
+}
+
+.read-nav {
+    display: none;
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    gap: 1rem;
+}
+
+body.reading-mode .read-nav {
+    display: flex;
+}
+
+/* Layout Panes */
+.pane-sidebar {
+    background: #1a1a1a;
+    color: #d1d1d1;
+    border-right: 1px solid #333;
+}
+
+.pane-nav {
+    background: #eeebe3;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Editor Appearance */
+.editor-paper {
+    background: var(--paper);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    font-family: 'Georgia', serif;
+}
+
+#editor[contenteditable="false"] {
+    opacity: 0.9;
+    cursor: default;
+}
+
+/* Button & Layout Fixes */
+.btn-sm {
+    flex-shrink: 0; /* Prevents buttons from squishing */
+}
+
+#sync-btn {
+    min-width: 85px;
+    height: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    line-height: 1.2;
+    color: white; /* High contrast text */
+}
+
+/* Context Menu & Modals */
+#context-menu {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e2e8f0;
+    width: 220px;
+}
+
+#pretty-modal { z-index: 1010; } 
+#spellbook-modal { z-index: 1000; }
+#spell-editor-modal { z-index: 1005; }

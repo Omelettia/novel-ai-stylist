@@ -14,7 +14,7 @@ class ChapterCreate(BaseModel):
     id: UUID
     title: str
     html: str
-    meta: Dict # Maps to style_manifest in models
+    meta: Dict 
     book_id: UUID
     order: int
 
@@ -43,3 +43,19 @@ class StyleRequest(BaseModel):
 
 class ChapterMoveRequest(BaseModel):
     ordered_ids: List[UUID]
+
+class SpellCreate(BaseModel):
+    name: str
+    prompt: Optional[str] = None 
+    css_code: str
+    category: Optional[str] = "General"
+    is_favorite: bool = False
+
+class SpellResponse(BaseModel):
+    id: UUID
+    name: str
+    prompt: Optional[str] 
+    css_code: str
+    category: str
+    is_favorite: bool
+    model_config = ConfigDict(from_attributes=True)

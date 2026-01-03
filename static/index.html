@@ -6,43 +6,17 @@
     <title>Grimoire OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet" />
-    <style>
-        :root { --paper: #fdfaf3; --ink: #2d2424; }
-        body { background-color: #f4f1ea; color: var(--ink); transition: background 0.5s ease; }
-        
-        /* Reading Mode Overrides */
-        body.reading-mode .pane-sidebar, 
-        body.reading-mode .pane-nav,
-        body.reading-mode nav:not(.read-nav) { display: none !important; }
-        
-        body.reading-mode .editor-paper { box-shadow: none; border: none; max-width: 850px; margin-top: 2vh; }
-        body.reading-mode .editor-container { background: var(--paper); }
-
-        /* Reading Navigation Arrows */
-        .read-nav { display: none; position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; gap: 1rem; }
-        body.reading-mode .read-nav { display: flex; }
-
-        .pane-sidebar { background: #1a1a1a; color: #d1d1d1; border-right: 1px solid #333; }
-        .pane-nav { background: #eeebe3; border-right: 1px solid rgba(0,0,0,0.05); }
-        .editor-paper { background: var(--paper); box-shadow: 0 10px 40px rgba(0,0,0,0.05); font-family: 'Georgia', serif; }
-        
-        #context-menu { display: none; position: fixed; z-index: 1000; background: white; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; width: 220px; }
-        #editor[contenteditable="false"] { opacity: 0.9; cursor: default; }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
 
-    <ul id="context-menu" class="menu menu-sm shadow-lg border">
-        <li class="menu-title opacity-50">Casting Menu</li>
-        <li><a onclick="castSpell('ai')">🪄 Ask Gemini...</a></li>
-        <div class="divider my-0"></div>
-        <li><a onclick="dispelMagic()" class="text-error font-bold">🌑 Dispel Magic</a></li>
-        <div class="divider my-0"></div>
-    </ul>
+    <div id="sticky-title" class="sticky-reader-title">Untitled Chapter</div>
+
+    <ul id="context-menu" class="menu menu-sm shadow-lg border bg-white rounded-box"></ul>
 
     <div class="read-nav join shadow-2xl">
-        <button class="btn join-item btn-ghost bg-white/80" onclick="navigateChapter(-1)">← Prev</button>
-        <button class="btn join-item btn-primary" onclick="toggleReadingMode()">Exit Reading-mode</button>
+        <button class="btn join-item btn-ghost bg-white/80" onclick="navigateChapter(-1)">← Previous</button>
+        <button class="btn join-item btn-primary" onclick="toggleReadingMode()">Exit Reading</button>
         <button class="btn join-item btn-ghost bg-white/80" onclick="navigateChapter(1)">Next →</button>
     </div>
 
@@ -60,10 +34,23 @@
         </div>
     </div>
 
+    <div id="pretty-modal" class="modal">
+        <div class="modal-box bg-[#fdfaf3] border border-amber-900/20 shadow-2xl">
+            <h3 id="pretty-modal-title" class="font-black text-xs uppercase tracking-widest text-amber-800 opacity-60 mb-4">Grimoire Action</h3>
+            <div class="py-4">
+                <input id="pretty-modal-input" type="text" class="input input-bordered w-full bg-white border-amber-900/10 focus:border-amber-600 outline-none text-amber-900" autofocus />
+            </div>
+            <div class="modal-action">
+                <button onclick="closePrettyModal()" class="btn btn-ghost text-xs uppercase tracking-tighter">Cancel</button>
+                <button id="pretty-modal-confirm" class="btn btn-primary px-8 text-xs uppercase tracking-widest">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <div id="main-layout" class="flex flex-1 overflow-hidden hidden">
         <aside class="w-64 pane-sidebar flex flex-col p-4">
             <div class="flex justify-between items-center mb-6">
-                <span class="text-[10px] font-black tracking-widest uppercase opacity-40">Grimoire Books</span>
+                <span class="text-[10px] font-black tracking-widest uppercase opacity-40 text-amber-500">Bookshelf</span>
                 <button onclick="createNewBook()" class="text-amber-500 hover:scale-125 transition">+</button>
             </div>
             <ul id="book-list" class="menu menu-sm p-0 gap-1 overflow-y-auto"></ul>
@@ -78,24 +65,75 @@
         </section>
 
         <main class="flex-1 flex flex-col editor-container">
-            <nav class="h-16 flex items-center justify-between ps-8 pe-16 border-b border-black/5 bg-white/50 backdrop-blur-md">
+            <nav class="h-16 flex items-center justify-between ps-8 pe-4 border-b border-black/5 bg-white/50 backdrop-blur-md">
                 <input id="chapter-title" type="text" placeholder="Select a chapter..." disabled class="bg-transparent font-bold text-lg outline-none w-full" />
-                <div class="flex gap-2 items-center">
-                    <button onclick="toggleReadingMode()" id="zen-btn" class="btn btn-outline btn-sm">📖 Reading-mode</button>
-                    <button onclick="sync()" id="sync-btn" class="btn btn-success btn-sm">SYNC</button>
+                
+                <div class="flex gap-3 items-center flex-shrink-0">
+                    <button onclick="toggleSpellbook()" class="btn btn-circle btn-ghost btn-sm text-amber-600 border border-amber-600/20" title="Open Grimoire">📜</button>
+                    <button onclick="toggleReadingMode()" id="zen-btn" class="btn btn-outline btn-sm whitespace-nowrap">📖 Reading-mode</button>
+                    
+                    <button onclick="sync()" id="sync-btn" class="btn btn-success btn-sm flex flex-col items-center">
+                        <span class="font-bold text-xs">SYNC</span>
+                        <span class="text-[9px] opacity-90">(Ctrl+S)</span>
+                    </button>
+                    
                     <button onclick="logout()" class="btn btn-ghost btn-sm">EXIT</button>
                 </div>
             </nav>
+
             <div class="flex-1 overflow-y-auto p-12 relative" id="scroll-container">
                 <div class="editor-paper max-w-3xl mx-auto p-16 min-h-[90vh]">
                     <div id="editor" contenteditable="false" class="prose lg:prose-xl outline-none">
-                        <p class="opacity-30 italic">Select a book and chapter to begin...</p>
+                        <p class="opacity-30 italic">Select a book and chapter to begin writing...</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <div id="spellbook-modal" class="modal">
+        <div class="modal-box bg-[#fdfaf3] max-w-2xl border border-amber-900/30 shadow-2xl">
+            <h3 class="font-black text-lg uppercase tracking-widest text-amber-800 mb-6 border-b border-amber-900/10 pb-2">Your Grimoire</h3>
+            <div id="spell-list" class="grid grid-cols-1 gap-4 max-h-96 overflow-y-auto pr-2">
+                <p class="opacity-40 italic">You haven't learned any spells yet...</p>
+            </div>
+            <div class="modal-action">
+                <button onclick="document.getElementById('spellbook-modal').classList.remove('modal-open')" class="btn btn-ghost">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="spell-editor-modal" class="modal">
+        <div class="modal-box bg-[#fdfaf3] max-w-3xl border border-amber-900/30 shadow-2xl">
+            <h3 class="font-black text-lg uppercase tracking-widest text-amber-800 mb-4 border-b border-amber-900/10 pb-2">Refine Spell</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-bold text-amber-900/60 uppercase text-[10px]">The Name</span></label>
+                    <textarea id="edit-spell-prompt" class="textarea textarea-bordered bg-white h-32 font-serif" placeholder="What was the intention?"></textarea>
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-bold text-amber-900/60 uppercase text-[10px]">The Incantation (CSS)</span></label>
+                    <textarea id="edit-spell-css" class="textarea textarea-bordered bg-white h-32 font-mono text-xs" placeholder="color: red; ..."></textarea>
+                </div>
+            </div>
+            <div class="modal-action">
+                <button onclick="document.getElementById('spell-editor-modal').classList.remove('modal-open')" class="btn btn-ghost">Cancel</button>
+                <button id="save-edited-spell-btn" class="btn btn-primary px-8">Update Grimoire</button>
+            </div>
+        </div>
+    </div>
+    <div id="delete-modal" class="modal">
+    <div class="modal-box max-w-xs bg-[#fdfaf3] border-2 border-red-200 shadow-2xl p-6">
+        <h3 id="delete-modal-title" class="font-serif font-bold text-lg text-red-900 tracking-tighter uppercase">Banish Content?</h3>
+        <p id="delete-modal-desc" class="py-4 text-sm italic opacity-70 leading-relaxed text-amber-900">
+            This action will permanently erase these pages from your grimoire.
+        </p>
+        <div class="modal-action flex justify-between items-center">
+            <button onclick="closeDeleteModal()" class="btn btn-ghost btn-sm text-xs opacity-50 hover:opacity-100">NEVERMIND</button>
+            <button id="delete-modal-confirm" class="btn btn-sm bg-red-500 hover:bg-red-700 border-none text-white px-6 uppercase font-bold tracking-widest">Confirm</button>
+        </div>
+    </div>
+</div>
     <script src="/static/js/script.js"></script>
 </body>
 </html>

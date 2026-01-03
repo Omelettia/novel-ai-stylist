@@ -31,7 +31,7 @@ class Chapter(Base):
     title = Column(String)
     sequence_number = Column(Integer, default=0, index=True) 
     html_content = Column(Text) 
-    style_manifest = Column(JSONB, default={}) # Fixed: named to match ChapterCreate.meta
+    style_manifest = Column(JSONB, default={}) 
     book_id = Column(UUID(as_uuid=True), ForeignKey("books.id"))
     
     book = relationship("Book", back_populates="chapters")
@@ -42,6 +42,7 @@ class Spell(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False) 
     category = Column(String, default="General")
+    prompt = Column(Text, nullable=True)
     css_code = Column(Text, nullable=False) 
     is_favorite = Column(Boolean, default=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))

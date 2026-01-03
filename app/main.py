@@ -14,7 +14,7 @@ from . import models, schemas, auth, database
 app = FastAPI()
 
 # --- CONFIG ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 app.add_middleware(
@@ -93,13 +93,13 @@ def save_chapter(chapter: schemas.ChapterCreate, user=Depends(get_user), db: Ses
     if existing:
         existing.title = chapter.title
         existing.html_content = chapter.html
-        existing.style_manifest = chapter.meta # Fixed keyword
+        existing.style_manifest = chapter.meta 
     else:
         new_chap = models.Chapter(
             id=chapter.id,
             title=chapter.title, 
             html_content=chapter.html,
-            style_manifest=chapter.meta, # Fixed keyword
+            style_manifest=chapter.meta, 
             book_id=chapter.book_id,
             sequence_number=chapter.order
         )
@@ -107,14 +107,69 @@ def save_chapter(chapter: schemas.ChapterCreate, user=Depends(get_user), db: Ses
     db.commit()
     return {"status": "synced"}
 
+@app.patch("/books/{book_id}", response_model=schemas.BookResponse)
+def update_book(
+    book_id: uuid.UUID, 
+    book_update: schemas.BookCreate, 
+    user=Depends(get_user), 
+    db: Session = Depends(database.get_db)
+):
+    # 1. Verify the book exists and belongs to the current user
+    book = db.query(models.Book).filter(
+        models.Book.id == book_id, 
+        models.Book.user_id == user.id
+    ).first()
+    
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found or unauthorized")
+    
+    # 2. Update the title
+    book.title = book_update.title
+    
+    # 3. Commit changes to the database
+    db.commit()
+    db.refresh(book)
+    
+    return book
+
+# --- DELETE ROUTES ---
+@app.delete("/books/{book_id}")
+def delete_book(book_id: uuid.UUID, user=Depends(get_user), db: Session = Depends(database.get_db)):
+    book = db.query(models.Book).filter(models.Book.id == book_id, models.Book.user_id == user.id).first()
+    if not book: raise HTTPException(status_code=404)
+    db.delete(book)
+    db.commit()
+    return {"status": "deleted"}
+
+@app.delete("/chapters/{chapter_id}")
+def delete_chapter(chapter_id: uuid.UUID, user=Depends(get_user), db: Session = Depends(database.get_db)):
+    # Verify ownership via the book
+    chapter = db.query(models.Chapter).filter(models.Chapter.id == chapter_id).first()
+    if not chapter: raise HTTPException(status_code=404)
+    
+    book = db.query(models.Book).filter(models.Book.id == chapter.book_id, models.Book.user_id == user.id).first()
+    if not book: raise HTTPException(status_code=403)
+    
+    db.delete(chapter)
+    db.commit()
+    return {"status": "deleted"}
+
 @app.post("/ai/spell")
 async def ai_spell(req: schemas.StyleRequest, user=Depends(get_user)):
+    # If current_css is provided, tell the AI to evolve it
+    base_context = f"BASE STYLE TO EVOLVE: {req.current_css}" if req.current_css else "START FROM SCRATCH"
+    
     prompt_text = f"""
-    Act as a Narrative UI Architect. Wrap the following text in a <span> with complex inline CSS.
-    CONTEXT: {req.current_css}
-    PROMPT: {req.user_prompt}
-    TEXT: {req.selected_text}
-    Return ONLY the <span> snippet. No markdown blocks or backticks.
+    Act as a Narrative UI Architect. Your goal is to wrap text in a <span> with complex inline CSS.
+    
+    STRATEGY: {base_context}
+    USER REQUEST: {req.user_prompt}
+    TARGET TEXT: {req.selected_text}
+    
+    REQUIREMENTS:
+    1. The page background is white (#f4f1ea), so ensure high contrast/readability.
+    2. If a BASE STYLE is provided, treat it as the 'foundation' and modify it according to the USER REQUEST.
+    3. Return ONLY the <span> snippet. No markdown, no backticks, no prose.
     """
     
     response = client.models.generate_content(
@@ -125,6 +180,60 @@ async def ai_spell(req: schemas.StyleRequest, user=Depends(get_user)):
     clean_html = response.text.strip().replace("```html", "").replace("```", "")
     return {"html": clean_html}
 
+@app.get("/spells", response_model=List[schemas.SpellResponse])
+def get_spells(user=Depends(get_user), db: Session = Depends(database.get_db)):
+    """Retrieve all saved spells for the current user."""
+    return db.query(models.Spell).filter(models.Spell.user_id == user.id).all()
+
+@app.post("/spells", response_model=schemas.SpellResponse)
+def save_spell(spell: schemas.SpellCreate, user=Depends(get_user), db: Session = Depends(database.get_db)):
+    """Store a new AI-generated style in the user's Grimoire."""
+    new_spell = models.Spell(
+        name=spell.name,
+        prompt=spell.prompt,
+        category=spell.category,
+        css_code=spell.css_code,
+        is_favorite=spell.is_favorite,
+        user_id=user.id
+    )
+    db.add(new_spell)
+    db.commit()
+    db.refresh(new_spell)
+    return new_spell
+
+@app.delete("/spells/{spell_id}")
+def delete_spell(spell_id: uuid.UUID, user=Depends(get_user), db: Session = Depends(database.get_db)):
+    """Remove a spell from the Grimoire."""
+    spell = db.query(models.Spell).filter(models.Spell.id == spell_id, models.Spell.user_id == user.id).first()
+    if not spell:
+        raise HTTPException(status_code=404, detail="Spell not found")
+    db.delete(spell)
+    db.commit()
+    return {"status": "forgotten"}
+
+@app.patch("/spells/{spell_id}", response_model=schemas.SpellResponse)
+def update_spell(
+    spell_id: uuid.UUID, 
+    spell_update: schemas.SpellCreate, 
+    user=Depends(get_user), 
+    db: Session = Depends(database.get_db)
+):
+    spell = db.query(models.Spell).filter(
+        models.Spell.id == spell_id, 
+        models.Spell.user_id == user.id
+    ).first()
+    
+    if not spell:
+        raise HTTPException(status_code=404, detail="Spell not found")
+    
+    spell.prompt = spell_update.prompt
+    spell.css_code = spell_update.css_code
+    spell.name = spell_update.name
+    
+    db.commit()
+    db.refresh(spell)
+    return spell
+
 @app.post("/chapters/reorder")
 def reorder(req: schemas.ChapterMoveRequest, db: Session = Depends(database.get_db)):
     for idx, chap_id in enumerate(req.ordered_ids):
@@ -132,5 +241,5 @@ def reorder(req: schemas.ChapterMoveRequest, db: Session = Depends(database.get_
     db.commit()
     return {"status": "ok"}
 
-# Static files mounted LAST to avoid route conflicts
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
