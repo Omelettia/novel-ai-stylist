@@ -7,3 +7,4 @@ python-jose[cryptography]
 python-dotenv
 python-multipart
 google-genai
+bcrypt==4.0.1
