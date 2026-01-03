@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import RedirectResponse
 
 
 from . import models, schemas, auth, database
@@ -244,5 +245,15 @@ def reorder(req: schemas.ChapterMoveRequest, db: Session = Depends(database.get_
     db.commit()
     return {"status": "ok"}
 
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/static/index.html")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+static_path = os.path.join(os.path.dirname(script_dir), "static")
+
+# Mount using the absolute path
+app.mount("/static", StaticFiles(directory=static_path), name="static")
