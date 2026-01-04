@@ -84,7 +84,13 @@ export function showSpellMenu(x, y, savedSpells, activeSpellIds) {
     let spellLinks = equipped.map(s => `
         <li class="flex justify-between items-center hover:bg-black/5 group">
             <a onclick="applySavedSpell('${s.id}')" class="flex-1 px-4 py-2 font-serif italic text-amber-900">📜 ${s.name}</a>
-            <button onclick="event.stopPropagation(); refineActiveSpell()" class="px-3 opacity-0 group-hover:opacity-100 text-[10px] font-bold text-amber-600">REFINE ✨</button>
+            <button 
+                onclick="event.stopPropagation(); refineKnownSpell(\`${s.css_code}\`, \`${s.name}\`)" 
+                class="px-3 opacity-0 group-hover:opacity-100 text-[10px] font-bold text-amber-600"
+                title="Apply this spell with tweaks"
+            >
+                REFINE ✨
+            </button>
         </li>
     `).join('');
 

@@ -360,21 +360,12 @@ window.toggleReadingMode = () => {
 };
 window.navigateChapter = navigateChapter;
 
-window.refineActiveSpell = async () => {
-    let node = state.currentRange.commonAncestorContainer;
-    if (node.nodeType === 3) node = node.parentNode; 
-    
-    const span = node.closest('span[style]'); 
+window.refineKnownSpell = async (cssCode, spellName) => {
 
-    if (!span) {
-        return UI.showToast("Click inside a spell first to refine it!", "error");
-    }
-
-    const currentCss = span.getAttribute('style');
-
-    UI.openPrettyPrompt("Refine Spell", "Make it darker, add glow...", async (prompt) => {
-
-        const baseSpell = { css_code: currentCss, name: "Current Style" };
+    UI.openPrettyPrompt(`Refine ${spellName}`, "Make it darker...", async (prompt) => {
+        Engine.saveState(state, editor, MAX_HISTORY);
+        
+        const baseSpell = { css_code: cssCode, name: spellName };
         
         const res = await Spells.refineSpell(state.currentRange, baseSpell, prompt);
         
