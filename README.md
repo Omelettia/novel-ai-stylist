@@ -11,7 +11,7 @@ NOVEL_AI_STYLIST is a web-based online journal built with FastAPI and Vanilla JS
 ### AI Spell Casting Workflow
 | Step 1: Select & Incant | Step 2: AI Generated Style |
 | :---: | :---: |
-| ![Spell Prompt](./Images/EditingWithAi.png) | ![Styled Result](./Images/EditingWithAi2.png) |
+| ![Spell Prompt](./Images/EditingWithAI.png) | ![Styled Result](./Images/EditingWithAi2.png) |
 
 ## 03. HOW TO USE
 
