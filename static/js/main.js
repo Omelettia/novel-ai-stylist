@@ -50,9 +50,23 @@ async function initApp() {
         authModal.classList.remove('modal-open');
         authModal.classList.add('hidden');
     }
-    document.getElementById('main-layout').classList.remove('hidden');
     
-    // Default State: No Book Selected
+    let typingTimer;
+    editor.addEventListener('input', (e) => {
+        clearTimeout(typingTimer);
+        
+        if (e.inputType === 'insertParagraph' || (e.data === ' ' && e.inputType === 'insertText')) {
+             Engine.saveState(state, editor, MAX_HISTORY);
+             return;
+        }
+
+        typingTimer = setTimeout(() => {
+            Engine.saveState(state, editor, MAX_HISTORY);
+        }, 500); 
+    });
+
+    document.getElementById('main-layout').classList.remove('hidden');
+
     editor.innerHTML = HTML_NO_BOOK;
     titleInput.value = "";
     titleInput.disabled = true;
@@ -126,7 +140,6 @@ async function loadChapter(id) {
     // Enable Editing
     const isReading = document.body.classList.contains('reading-mode');
     editor.contentEditable = isReading ? "false" : "true";
-    
     editor.innerHTML = data.html_content || data.html || "";
     
     // Set Title
@@ -136,6 +149,11 @@ async function loadChapter(id) {
     
     document.getElementById('sticky-title').innerText = data.title;
     renderChapters();
+
+    // Reset History & Save Baseline
+    state.undoStack = []; 
+    state.redoStack = [];
+    Engine.saveState(state, editor, MAX_HISTORY); 
 }
 
 async function createNewChapter() {
@@ -230,10 +248,28 @@ window.addEventListener('contextmenu', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable && e.target !== editor) {
+        return;
+    }
+
     if ((e.ctrlKey || e.metaKey)) {
-        if (e.key === 's') { e.preventDefault(); sync(); }
-        if (e.key === 'z') { e.preventDefault(); Engine.undo(state, editor); }
-        if (e.key === 'y') { e.preventDefault(); Engine.redo(state, editor); }
+        // Ctrl + S (Sync)
+        if (e.key.toLowerCase() === 's') { 
+            e.preventDefault(); 
+            sync(); 
+        }
+        
+        // Ctrl + Z (Undo)
+        if (e.key.toLowerCase() === 'z') { 
+            e.preventDefault(); 
+            Engine.undo(state, editor); 
+        }
+        
+        // Ctrl + Y (Redo)
+        if (e.key.toLowerCase() === 'y') { 
+            e.preventDefault(); 
+            Engine.redo(state, editor); 
+        }
     }
 });
 
